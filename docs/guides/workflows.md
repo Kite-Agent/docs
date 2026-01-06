@@ -12,25 +12,25 @@ Learn how to build sophisticated testing workflows with KiteAgent.
 def test_checkout_workflow():
     agent = BrowsingAgent(...)
     conv = Conversation()
-    
+
     # Product selection
     conv = agent.execute(conv, "Search for 'laptop'")
     conv = agent.execute(conv, "Click first result")
     conv = agent.execute(conv, "Click 'Add to Cart'")
-    
+
     # Cart review
     conv = agent.execute(conv, "Navigate to cart")
     conv = agent.execute(conv, "Verify cart contains 1 item")
-    
+
     # Checkout
     conv = agent.execute(conv, "Click 'Checkout'")
     conv = agent.execute(conv, "Fill shipping address")
     conv = agent.execute(conv, "Select payment method")
     conv = agent.execute(conv, "Click 'Place Order'")
-    
+
     # Confirmation
     conv = agent.execute(conv, "Verify order confirmation displayed")
-    
+
     return conv
 ```
 
@@ -39,20 +39,20 @@ def test_checkout_workflow():
 ```python
 def test_with_conditions(agent: BrowsingAgent):
     conv = Conversation()
-    
+
     conv = agent.execute(conv, "Navigate to product page")
-    
+
     # Check if item is in stock
     stock_check = agent.execute(
         conv,
         "Check if 'In Stock' text is visible"
     )
-    
+
     if stock_check.has_element("text=In Stock"):
         conv = agent.execute(conv, "Click 'Add to Cart'")
     else:
         conv = agent.execute(conv, "Click 'Notify Me'")
-    
+
     return conv
 ```
 
@@ -63,14 +63,14 @@ import asyncio
 
 async def run_parallel_tests():
     agent = BrowsingAgent(...)
-    
+
     # Run multiple tests in parallel
     results = await asyncio.gather(
         test_login(agent),
         test_registration(agent),
         test_password_reset(agent)
     )
-    
+
     return results
 ```
 
@@ -88,7 +88,7 @@ for data in test_data:
         Conversation(),
         f'Login with username "{data["username"]}" and password "{data["password"]}"'
     )
-    
+
     succeeded = not conv.has_failures()
     assert succeeded == data["should_succeed"], \
         f"Test case failed for {data['username']}"

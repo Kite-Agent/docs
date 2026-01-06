@@ -37,12 +37,12 @@ def test_with_self_healing():
             )
         ]
     )
-    
+
     conversation = Conversation()
-    
+
     # This will succeed even if selector changes
     conversation = agent.execute(conversation, "Click the submit button")
-    
+
     # Behind the scenes:
     # 1. Tries original selector: #submit-btn ❌
     # 2. Self-healing activates
@@ -50,9 +50,9 @@ def test_with_self_healing():
     # 4. Uses vision model to find button
     # 5. Finds new selector: .submit-button ✓
     # 6. Retries with new selector ✓
-    
+
     print("✓ Test passed with self-healing!")
-    
+
     return conversation
 ```
 
@@ -82,13 +82,13 @@ sequenceDiagram
 skill = SelfHealingSkill(
     # Vision model to use
     vision_model="gpt-4-vision",
-    
+
     # Maximum retry attempts
     max_retries=3,
-    
+
     # Similarity threshold (0-1)
     similarity_threshold=0.85,
-    
+
     # Enable caching of healed selectors
     cache_healed_selectors=True
 )

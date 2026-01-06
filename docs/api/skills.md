@@ -15,10 +15,10 @@ from typing import Protocol
 
 class Skill(Protocol):
     name: str
-    
+
     def can_handle(self, error: Exception) -> bool:
         ...
-    
+
     def recover(self, conversation: Conversation, error: Exception) -> Action:
         ...
 ```

@@ -15,10 +15,10 @@ from typing import Protocol
 
 class Tool(Protocol):
     name: str
-    
+
     def execute(self, action: Action) -> Event:
         ...
-    
+
     def can_handle(self, action: Action) -> bool:
         ...
 ```

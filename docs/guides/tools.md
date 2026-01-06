@@ -16,10 +16,10 @@ from kite_agent import Action, Event
 
 class Tool(Protocol):
     name: str
-    
+
     def execute(self, action: Action) -> Event:
         ...
-    
+
     def can_handle(self, action: Action) -> bool:
         ...
 ```
@@ -34,15 +34,15 @@ class EmailTool(Tool):
     def __init__(self, config: Dict[str, Any]):
         self.name = "email"
         self.config = config
-    
+
     def execute(self, action: Action) -> Event:
         if action.type == "send":
             return self._send_email(action.data)
         raise ValueError(f"Unknown action: {action.type}")
-    
+
     def can_handle(self, action: Action) -> bool:
         return action.tool_name == "email"
-    
+
     def _send_email(self, data: Dict[str, Any]) -> "EmailSentEvent":
         # Implementation
         return EmailSentEvent(
@@ -64,7 +64,7 @@ class DatabaseTool(Tool):
     def __init__(self, connection: "DatabaseConnection"):
         self.name = "database"
         self.connection = connection
-    
+
     def execute(self, action: Action) -> Event:
         if action.type == "query":
             return self._query(action.data["sql"])
@@ -74,10 +74,10 @@ class DatabaseTool(Tool):
             return self._delete(action.data["table"], action.data["where"])
         else:
             raise ValueError(f"Unknown action: {action.type}")
-    
+
     def can_handle(self, action: Action) -> bool:
         return action.tool_name == "database"
-    
+
     def _query(self, sql: str) -> "QueryResultEvent":
         results = self.connection.query(sql)
         return QueryResultEvent(

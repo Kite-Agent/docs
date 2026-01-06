@@ -21,36 +21,36 @@ def record_and_generate():
     browsing_agent = BrowsingAgent(
         tools=[BrowserTool()]
     )
-    
+
     conversation = Conversation()
-    
+
     conversation = browsing_agent.execute(
         conversation,
         "Navigate to https://example.com"
     )
-    
+
     conversation = browsing_agent.execute(conversation, "Click 'Sign Up'")
-    
+
     conversation = browsing_agent.execute(
         conversation,
         "Fill registration form"
     )
-    
+
     # Step 2: Generate code from conversation
     coding_agent = CodingAgent(
         llm={"model": "gpt-4", "api_key": os.getenv("OPENAI_API_KEY")}
     )
-    
+
     # Generate for different frameworks
     playwright_code = coding_agent.generate_code(
         conversation,
         "playwright"
     )
-    
+
     selenium_code = coding_agent.generate_code(conversation, "selenium")
-    
+
     cypress_code = coding_agent.generate_code(conversation, "cypress")
-    
+
     # Save generated code
     with open("./tests/signup.playwright.ts", "w") as f:
         f.write(playwright_code)
