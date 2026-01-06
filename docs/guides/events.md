@@ -10,91 +10,82 @@ Learn how to work with KiteAgent's event system for advanced test scenarios.
 
 Every action in KiteAgent is recorded as an immutable event:
 
-```typescript
-import { BrowserActionEvent, DOMObservationEvent } from "@kite-agent/core";
+```python
+from kite_agent import BrowserActionEvent, DOMObservationEvent
+from datetime import datetime
 
-// Create action event
-const clickEvent = new BrowserActionEvent({
-  action: "click",
-  selector: "#submit-button",
-  timestamp: new Date(),
-});
+# Create action event
+click_event = BrowserActionEvent(
+    action="click",
+    selector="#submit-button",
+    timestamp=datetime.now()
+)
 
-// Create observation event
-const observation = new DOMObservationEvent({
-  dom_tree: '<button id="submit">Submit</button>',
-  screenshot_b64: "data:image/png;base64,...",
-  url: "https://example.com",
-});
+# Create observation event
+observation = DOMObservationEvent(
+    dom_tree='<button id="submit">Submit</button>',
+    screenshot_b64="data:image/png;base64,...",
+    url="https://example.com"
+)
 ```
 
 ## Reading Events
 
 ### Filtering by Type
 
-```typescript
-// Get all actions
-const actions = conversation.events.filter(
-  (e) => e instanceof BrowserActionEvent
-);
+```python
+# Get all actions
+actions = [e for e in conversation.events if isinstance(e, BrowserActionEvent)]
 
-// Get all observations
-const observations = conversation.events.filter(
-  (e) => e instanceof DOMObservationEvent
-);
+# Get all observations
+observations = [e for e in conversation.events if isinstance(e, DOMObservationEvent)]
 
-// Get failures
-const failures = conversation.events.filter(
-  (e) => e instanceof TestFailureEvent
-);
+# Get failures
+failures = [e for e in conversation.events if isinstance(e, TestFailureEvent)]
 ```
 
 ### Analyzing Event Sequences
 
-```typescript
-function analyzeConversation(conversation: Conversation) {
-  console.log(`Total events: ${conversation.events.length}`);
+```python
+def analyze_conversation(conversation: Conversation):
+    print(f"Total events: {len(conversation.events)}")
 
-  const actionCount = conversation.events.filter(
-    (e) => e instanceof BrowserActionEvent
-  ).length;
+    action_count = len([
+        e for e in conversation.events
+        if isinstance(e, BrowserActionEvent)
+    ])
 
-  const failureCount = conversation.events.filter(
-    (e) => e instanceof TestFailureEvent
-  ).length;
+    failure_count = len([
+        e for e in conversation.events
+        if isinstance(e, TestFailureEvent)
+    ])
 
-  console.log(`Actions: ${actionCount}`);
-  console.log(`Failures: ${failureCount}`);
-  console.log(
-    `Success rate: ${(
-      ((actionCount - failureCount) / actionCount) *
-      100
-    ).toFixed(1)}%`
-  );
-}
+    print(f"Actions: {action_count}")
+    print(f"Failures: {failure_count}")
+
+    success_rate = ((action_count - failure_count) / action_count) * 100
+    print(f"Success rate: {success_rate:.1f}%")
 ```
 
 ## Custom Events
 
 Create domain-specific events:
 
-```typescript
-import { Event } from "@kite-agent/core";
+```python
+from kite_agent import Event
+from typing import List
 
-class CheckoutCompletedEvent extends Event {
-  constructor(
-    public orderId: string,
-    public total: number,
-    public items: string[]
-  ) {
-    super();
-  }
-}
+class CheckoutCompletedEvent(Event):
+    def __init__(self, order_id: str, total: float, items: List[str]):
+        super().__init__()
+        self.order_id = order_id
+        self.total = total
+        self.items = items
 
-// Use in conversation
-conversation = conversation.withEvent(
-  new CheckoutCompletedEvent("ORDER-123", 99.99, ["Item 1", "Item 2"])
-);
+# Use in conversation
+conversation = conversation.with_event(
+    CheckoutCompletedEvent("ORDER-123", 99.99, ["Item 1", "Item 2"])
+)
 ```
 
 ## Event Patterns
@@ -103,34 +94,34 @@ conversation = conversation.withEvent(
 
 Always pair actions with observations:
 
-```typescript
-// Action
-conversation = conversation.withEvent(
-  new BrowserActionEvent({ action: "click", selector: "#btn" })
-);
+```python
+# Action
+conversation = conversation.with_event(
+    BrowserActionEvent(action="click", selector="#btn")
+)
 
-// Observation
-conversation = conversation.withEvent(
-  new DOMObservationEvent({ dom_tree: "...", screenshot_b64: "..." })
-);
+# Observation
+conversation = conversation.with_event(
+    DOMObservationEvent(dom_tree="...", screenshot_b64="...")
+)
 ```
 
 ### Assertion Pattern
 
 Add verification events:
 
-```typescript
-// Perform action
-conversation = await agent.execute(conv, "Click login");
+```python
+# Perform action
+conversation = agent.execute(conv, "Click login")
 
-// Add assertion
-conversation = conversation.withEvent(
-  new AssertionEvent({
-    expected: "Dashboard",
-    actual: pageTitle,
-    passed: pageTitle === "Dashboard",
-  })
-);
+# Add assertion
+conversation = conversation.with_event(
+    AssertionEvent(
+        expected="Dashboard",
+        actual=page_title,
+        passed=(page_title == "Dashboard")
+    )
+)
 ```
 
 ## Next Steps

@@ -19,55 +19,56 @@ KiteAgent uses specialized agents for different testing tasks:
 
 ### Simple Test Execution
 
-```typescript
-import { BrowsingAgent, BrowserTool } from "@kite-agent/core";
+```python
+from kite_agent import BrowsingAgent, BrowserTool, Conversation
+import os
 
-const agent = new BrowsingAgent({
-  tools: [new BrowserTool()],
-  llm: { model: "gpt-4", apiKey: process.env.OPENAI_API_KEY },
-});
+agent = BrowsingAgent(
+    tools=[BrowserTool()],
+    llm={"model": "gpt-4", "api_key": os.getenv("OPENAI_API_KEY")}
+)
 
-// Execute single instruction
-const conversation = await agent.execute(
-  new Conversation(),
-  "Click the login button"
-);
+# Execute single instruction
+conversation = agent.execute(
+    Conversation(),
+    "Click the login button"
+)
 ```
 
 ### Multi-Step Tests
 
-```typescript
-const agent = new BrowsingAgent({
-  tools: [new BrowserTool()],
-});
+```python
+agent = BrowsingAgent(
+    tools=[BrowserTool()]
+)
 
-let conversation = new Conversation();
+conversation = Conversation()
 
-// Step 1: Navigate
-conversation = await agent.execute(
-  conversation,
-  "Navigate to https://example.com/login"
-);
+# Step 1: Navigate
+conversation = agent.execute(
+    conversation,
+    "Navigate to https://example.com/login"
+)
 
-// Step 2: Fill form
-conversation = await agent.execute(
-  conversation,
-  "Enter 'testuser' in the username field"
-);
+# Step 2: Fill form
+conversation = agent.execute(
+    conversation,
+    "Enter 'testuser' in the username field"
+)
 
-conversation = await agent.execute(
-  conversation,
-  "Enter 'password123' in the password field"
-);
+conversation = agent.execute(
+    conversation,
+    "Enter 'password123' in the password field"
+)
 
-// Step 3: Submit
-conversation = await agent.execute(conversation, "Click the submit button");
+# Step 3: Submit
+conversation = agent.execute(conversation, "Click the submit button")
 
-// Step 4: Verify
-conversation = await agent.execute(
-  conversation,
-  "Verify the page shows 'Welcome, testuser'"
-);
+# Step 4: Verify
+conversation = agent.execute(
+    conversation,
+    "Verify the page shows 'Welcome, testuser'"
+)
 ```
 
 ## Agent Configuration
@@ -76,32 +77,32 @@ conversation = await agent.execute(
 
 For critical flows, use conservative settings:
 
-```typescript
-const productionAgent = new BrowsingAgent({
-  llm: {
-    model: "gpt-4",
-    temperature: 0.0, // Deterministic
-    maxTokens: 2000,
-  },
-  tools: [new BrowserTool({ headless: true })],
-  skills: [new SelfHealingSkill({ maxRetries: 5 })],
-  timeout: 60000, // 60 seconds
-});
+```python
+production_agent = BrowsingAgent(
+    llm={
+        "model": "gpt-4",
+        "temperature": 0.0,  # Deterministic
+        "max_tokens": 2000
+    },
+    tools=[BrowserTool(headless=True)],
+    skills=[SelfHealingSkill(max_retries=5)],
+    timeout=60000  # 60 seconds
+)
 ```
 
 ### Exploratory Agent (Development)
 
 For exploration, use more flexible settings:
 
-```typescript
-const exploratoryAgent = new BrowsingAgent({
-  llm: {
-    model: "gpt-3.5-turbo",
-    temperature: 0.7, // More creative
-  },
-  tools: [new BrowserTool({ headless: false, slowMo: 500 })],
-  timeout: 30000,
-});
+```python
+exploratory_agent = BrowsingAgent(
+    llm={
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.7  # More creative
+    },
+    tools=[BrowserTool(headless=False, slow_mo=500)],
+    timeout=30000
+)
 ```
 
 ## Agent Orchestration
@@ -110,190 +111,186 @@ const exploratoryAgent = new BrowsingAgent({
 
 The Supervisor Agent coordinates multiple agents:
 
-```typescript
-import { SupervisorAgent } from '@kite-agent/core';
+```python
+from kite_agent import SupervisorAgent
 
-const supervisor = new SupervisorAgent({
-  workers: {
-    browsing: new BrowsingAgent({...}),
-    api: new APIAgent({...}),
-    coding: new CodingAgent({...})
-  }
-});
+supervisor = SupervisorAgent(
+    workers={
+        "browsing": BrowsingAgent(...),
+        "api": APIAgent(...),
+        "coding": CodingAgent(...)
+    }
+)
 
-// Supervisor delegates automatically
-const result = await supervisor.execute({
-  scenario: `
-    1. Test user registration via UI
-    2. Verify user created via API
-    3. Generate test code for both
-  `
-});
+# Supervisor delegates automatically
+result = supervisor.execute(
+    scenario="""
+        1. Test user registration via UI
+        2. Verify user created via API
+        3. Generate test code for both
+    """
+)
 ```
 
 ### Manual Agent Coordination
 
 For custom workflows, coordinate agents manually:
 
-```typescript
-const browsingAgent = new BrowsingAgent({...});
-const codingAgent = new CodingAgent({...});
+```python
+browsing_agent = BrowsingAgent(...)
+coding_agent = CodingAgent(...)
 
-// Step 1: Execute test
-let conversation = new Conversation();
-conversation = await browsingAgent.execute(
-  conversation,
-  "Complete the checkout flow"
-);
+# Step 1: Execute test
+conversation = Conversation()
+conversation = browsing_agent.execute(
+    conversation,
+    "Complete the checkout flow"
+)
 
-// Step 2: Generate code from execution
-const code = await codingAgent.generateCode(
-  conversation,
-  'playwright'
-);
+# Step 2: Generate code from execution
+code = coding_agent.generate_code(
+    conversation,
+    framework="playwright"
+)
 
-console.log(code);
+print(code)
 ```
 
 ## Advanced Patterns
 
 ### Agent with Custom Tools
 
-```typescript
-import { CustomTool } from "./custom-tool";
+```python
+from custom_tool import CustomTool
 
-const agent = new BrowsingAgent({
-  tools: [
-    new BrowserTool(),
-    new CustomTool(), // Your custom tool
-  ],
-});
+agent = BrowsingAgent(
+    tools=[
+        BrowserTool(),
+        CustomTool()  # Your custom tool
+    ]
+)
 
-// Agent automatically selects appropriate tool
-await agent.execute(conversation, "Send Slack notification");
+# Agent automatically selects appropriate tool
+agent.execute(conversation, "Send Slack notification")
 ```
 
 ### Agent with Multiple Skills
 
-```typescript
-const agent = new BrowsingAgent({
-  skills: [
-    new SelfHealingSkill(),
-    new VisualCheckSkill(),
-    new AccessibilitySkill(),
-  ],
-});
+```python
+agent = BrowsingAgent(
+    skills=[
+        SelfHealingSkill(),
+        VisualCheckSkill(),
+        AccessibilitySkill()
+    ]
+)
 
-// Skills activate automatically when needed
+# Skills activate automatically when needed
 ```
 
 ### Custom Agent
 
 Create specialized agents for your domain:
 
-```typescript
-class ECommerceAgent extends BrowsingAgent {
-  async addToCart(product: string) {
-    let conv = this.conversation;
+```python
+class ECommerceAgent(BrowsingAgent):
+    def add_to_cart(self, product: str):
+        conv = self.conversation
 
-    conv = await this.execute(conv, `Search for "${product}"`);
-    conv = await this.execute(conv, "Click first result");
-    conv = await this.execute(conv, "Click 'Add to Cart'");
+        conv = self.execute(conv, f'Search for "{product}"')
+        conv = self.execute(conv, "Click first result")
+        conv = self.execute(conv, "Click 'Add to Cart'")
 
-    return conv;
-  }
+        return conv
 
-  async checkout() {
-    let conv = this.conversation;
+    def checkout(self):
+        conv = self.conversation
 
-    conv = await this.execute(conv, "Click cart icon");
-    conv = await this.execute(conv, "Click 'Proceed to Checkout'");
-    conv = await this.execute(conv, "Fill shipping information");
-    conv = await this.execute(conv, "Select payment method");
+        conv = self.execute(conv, "Click cart icon")
+        conv = self.execute(conv, "Click 'Proceed to Checkout'")
+        conv = self.execute(conv, "Fill shipping information")
+        conv = self.execute(conv, "Select payment method")
 
-    return conv;
-  }
-}
+        return conv
 
-// Usage
-const agent = new ECommerceAgent({...});
-let conv = await agent.addToCart("Laptop");
-conv = await agent.checkout();
+# Usage
+agent = ECommerceAgent(...)
+conv = agent.add_to_cart("Laptop")
+conv = agent.checkout()
 ```
 
 ## Error Handling
 
 ### Retry Logic
 
-```typescript
-async function executeWithRetry(
-  agent: BrowsingAgent,
-  conversation: Conversation,
-  instruction: string,
-  maxRetries: number = 3
-): Promise<Conversation> {
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await agent.execute(conversation, instruction);
-    } catch (error) {
-      if (i === maxRetries - 1) throw error;
-      console.log(`Retry ${i + 1}/${maxRetries}`);
-      await sleep(1000 * (i + 1)); // Exponential backoff
-    }
-  }
-}
+```python
+import time
+
+def execute_with_retry(
+    agent: BrowsingAgent,
+    conversation: Conversation,
+    instruction: str,
+    max_retries: int = 3
+) -> Conversation:
+    for i in range(max_retries):
+        try:
+            return agent.execute(conversation, instruction)
+        except Exception as error:
+            if i == max_retries - 1:
+                raise error
+            print(f"Retry {i + 1}/{max_retries}")
+            time.sleep(1 * (i + 1))  # Exponential backoff
 ```
 
 ### Graceful Degradation
 
-```typescript
-try {
-  conversation = await agent.execute(conversation, "Click the submit button");
-} catch (error) {
-  console.warn("Primary method failed, trying alternative");
+```python
+try:
+    conversation = agent.execute(conversation, "Click the submit button")
+except Exception as error:
+    print("Primary method failed, trying alternative")
 
-  // Try alternative approach
-  conversation = await agent.execute(
-    conversation,
-    "Press Enter key to submit form"
-  );
-}
+    # Try alternative approach
+    conversation = agent.execute(
+        conversation,
+        "Press Enter key to submit form"
+    )
 ```
 
 ## Best Practices
 
 ### 1. Use Specific Instructions
 
-```typescript
-// ❌ Vague
-await agent.execute(conv, "Login");
+```python
+# ❌ Vague
+agent.execute(conv, "Login")
 
-// ✅ Specific
-await agent.execute(conv, "Enter 'admin' in username field");
-await agent.execute(conv, "Enter 'pass123' in password field");
-await agent.execute(conv, "Click button with text 'Login'");
+# ✅ Specific
+agent.execute(conv, "Enter 'admin' in username field")
+agent.execute(conv, "Enter 'pass123' in password field")
+agent.execute(conv, "Click button with text 'Login'")
 ```
 
 ### 2. Verify After Actions
 
-```typescript
-// Always verify important actions
-conversation = await agent.execute(conv, "Click 'Delete Account'");
-conversation = await agent.execute(
-  conv,
-  "Verify confirmation message is displayed"
-);
+```python
+# Always verify important actions
+conversation = agent.execute(conv, "Click 'Delete Account'")
+conversation = agent.execute(
+    conv,
+    "Verify confirmation message is displayed"
+)
 ```
 
 ### 3. Keep Conversations Focused
 
-```typescript
-// ✅ Good: One conversation per test scenario
-const loginConv = await runLoginTest();
-const checkoutConv = await runCheckoutTest();
+```python
+# ✅ Good: One conversation per test scenario
+login_conv = run_login_test()
+checkout_conv = run_checkout_test()
 
-// ❌ Bad: Everything in one conversation
-const megaConv = await runAllTests();
+# ❌ Bad: Everything in one conversation
+mega_conv = run_all_tests()
 ```
 
 ## Next Steps

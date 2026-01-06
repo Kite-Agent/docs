@@ -10,12 +10,17 @@ Complete reference for skill interfaces and implementations.
 
 Base interface for all skills.
 
-```typescript
-interface Skill {
-  name: string;
-  canHandle(error: Error): boolean;
-  recover(conversation: Conversation, error: Error): Promise<Action>;
-}
+```python
+from typing import Protocol
+
+class Skill(Protocol):
+    name: str
+    
+    def can_handle(self, error: Exception) -> bool:
+        ...
+    
+    def recover(self, conversation: Conversation, error: Exception) -> Action:
+        ...
 ```
 
 ---
@@ -26,19 +31,19 @@ Automatically recovers from selector failures.
 
 ### Constructor
 
-```typescript
-new SelfHealingSkill(config?: SelfHealingConfig)
+```python
+SelfHealingSkill(config: Optional[SelfHealingConfig] = None)
 ```
 
 #### SelfHealingConfig
 
-```typescript
-interface SelfHealingConfig {
-  visionModel?: string;
-  maxRetries?: number;
-  similarityThreshold?: number;
-  cacheHealedSelectors?: boolean;
-}
+```python
+@dataclass
+class SelfHealingConfig:
+    vision_model: str = "gpt-4-vision"
+    max_retries: int = 3
+    similarity_threshold: float = 0.85
+    cache_healed_selectors: bool = True
 ```
 
 **Default Values:**
@@ -50,12 +55,12 @@ interface SelfHealingConfig {
 
 ### Methods
 
-#### canHandle()
+#### can_handle()
 
 Check if skill can handle error.
 
-```typescript
-canHandle(error: Error): boolean
+```python
+def can_handle(self, error: Exception) -> bool:
 ```
 
 **Returns:** `true` for `ElementNotFoundException`
@@ -64,11 +69,12 @@ canHandle(error: Error): boolean
 
 Recover from error.
 
-```typescript
-async recover(
-  conversation: Conversation,
-  error: ElementNotFoundException
-): Promise<Action>
+```python
+def recover(
+    self,
+    conversation: Conversation,
+    error: ElementNotFoundException
+) -> Action:
 ```
 
 **Returns:** New action with healed selector
@@ -81,18 +87,18 @@ Compare UI against reference screenshots.
 
 ### Constructor
 
-```typescript
-new VisualCheckSkill(config?: VisualCheckConfig)
+```python
+VisualCheckSkill(config: Optional[VisualCheckConfig] = None)
 ```
 
 #### VisualCheckConfig
 
-```typescript
-interface VisualCheckConfig {
-  threshold?: number;
-  ignoreRegions?: Region[];
-  algorithm?: "ssim" | "pixelmatch";
-}
+```python
+@dataclass
+class VisualCheckConfig:
+    threshold: float = 0.95
+    ignore_regions: List[Region] = field(default_factory=list)
+    algorithm: Literal["ssim", "pixelmatch"] = "ssim"
 ```
 
 ### Methods
@@ -101,11 +107,12 @@ interface VisualCheckConfig {
 
 Compare two screenshots.
 
-```typescript
-async compare(
-  reference: string,
-  current: string
-): Promise<VisualDiffResult>
+```python
+def compare(
+    self,
+    reference: str,
+    current: str
+) -> VisualDiffResult:
 ```
 
 **Parameters:**
@@ -115,12 +122,12 @@ async compare(
 
 **Returns:**
 
-```typescript
-interface VisualDiffResult {
-  similarity: number;
-  passed: boolean;
-  diffImage?: string;
-}
+```python
+@dataclass
+class VisualDiffResult:
+    similarity: float
+    passed: bool
+    diff_image: Optional[str] = None
 ```
 
 ---
@@ -131,43 +138,43 @@ Check WCAG compliance.
 
 ### Constructor
 
-```typescript
-new AccessibilitySkill(config?: AccessibilityConfig)
+```python
+AccessibilitySkill(config: Optional[AccessibilityConfig] = None)
 ```
 
 #### AccessibilityConfig
 
-```typescript
-interface AccessibilityConfig {
-  wcagLevel?: "A" | "AA" | "AAA";
-  rules?: string[];
-}
+```python
+@dataclass
+class AccessibilityConfig:
+    wcag_level: Literal["A", "AA", "AAA"] = "AA"
+    rules: List[str] = field(default_factory=list)
 ```
 
 ### Methods
 
-#### checkCompliance()
+#### check_compliance()
 
 Check page for accessibility issues.
 
-```typescript
-async checkCompliance(dom: string): Promise<AccessibilityReport>
+```python
+def check_compliance(self, dom: str) -> AccessibilityReport:
 ```
 
 **Returns:**
 
-```typescript
-interface AccessibilityReport {
-  passed: boolean;
-  issues: AccessibilityIssue[];
-}
+```python
+@dataclass
+class AccessibilityReport:
+    passed: bool
+    issues: List[AccessibilityIssue]
 
-interface AccessibilityIssue {
-  rule: string;
-  severity: "error" | "warning";
-  message: string;
-  element?: string;
-}
+@dataclass
+class AccessibilityIssue:
+    rule: str
+    severity: Literal["error", "warning"]
+    message: str
+    element: Optional[str] = None
 ```
 
 ## Next Steps

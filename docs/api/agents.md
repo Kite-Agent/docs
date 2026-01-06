@@ -12,20 +12,23 @@ The primary agent for browser-based testing.
 
 ### Constructor
 
-```typescript
-new BrowsingAgent(config: BrowsingAgentConfig)
+```python
+BrowsingAgent(config: BrowsingAgentConfig)
 ```
 
 #### BrowsingAgentConfig
 
-```typescript
-interface BrowsingAgentConfig {
-  llm: LLMConfig;
-  tools: Tool[];
-  skills?: Skill[];
-  timeout?: number;
-  logging?: LoggingConfig;
-}
+```python
+from dataclasses import dataclass
+from typing import List, Optional
+
+@dataclass
+class BrowsingAgentConfig:
+    llm: LLMConfig
+    tools: List[Tool]
+    skills: Optional[List[Skill]] = None
+    timeout: Optional[int] = None
+    logging: Optional[LoggingConfig] = None
 ```
 
 ### Methods
@@ -34,11 +37,12 @@ interface BrowsingAgentConfig {
 
 Execute a single test instruction.
 
-```typescript
-async execute(
-  conversation: Conversation,
-  instruction: string
-): Promise<Conversation>
+```python
+def execute(
+    self,
+    conversation: Conversation,
+    instruction: str
+) -> Conversation:
 ```
 
 **Parameters:**
@@ -50,10 +54,10 @@ async execute(
 
 **Example:**
 
-```typescript
-const agent = new BrowsingAgent({...});
-let conv = new Conversation();
-conv = await agent.execute(conv, "Click login button");
+```python
+agent = BrowsingAgent(...)
+conv = Conversation()
+conv = agent.execute(conv, "Click login button")
 ```
 
 ---
@@ -64,8 +68,8 @@ Agent for generating test code from conversations.
 
 ### Constructor
 
-```typescript
-new CodingAgent(config: CodingAgentConfig)
+```python
+CodingAgent(config: CodingAgentConfig)
 ```
 
 ### Methods
@@ -74,12 +78,13 @@ new CodingAgent(config: CodingAgentConfig)
 
 Generate test code from conversation.
 
-```typescript
-async generateCode(
-  conversation: Conversation,
-  framework: 'playwright' | 'selenium' | 'cypress',
-  options?: CodeGenOptions
-): Promise<string>
+```python
+def generate_code(
+    self,
+    conversation: Conversation,
+    framework: Literal['playwright', 'selenium', 'cypress'],
+    options: Optional[CodeGenOptions] = None
+) -> str:
 ```
 
 **Parameters:**
@@ -92,9 +97,9 @@ async generateCode(
 
 **Example:**
 
-```typescript
-const agent = new CodingAgent({...});
-const code = await agent.generateCode(conv, 'playwright');
+```python
+agent = CodingAgent(...)
+code = agent.generate_code(conv, 'playwright')
 ```
 
 ---
@@ -105,21 +110,21 @@ Coordinates multiple agents.
 
 ### Constructor
 
-```typescript
-new SupervisorAgent(config: SupervisorConfig)
+```python
+SupervisorAgent(config: SupervisorConfig)
 ```
 
 #### SupervisorConfig
 
-```typescript
-interface SupervisorConfig {
-  workers: {
-    browsing: BrowsingAgent;
-    api?: APIAgent;
-    coding: CodingAgent;
-  };
-  llm: LLMConfig;
-}
+```python
+@dataclass
+class SupervisorConfig:
+    workers: dict  # {
+        # "browsing": BrowsingAgent,
+        # "api": APIAgent,  # Optional
+        # "coding": CodingAgent
+    # }
+    llm: LLMConfig
 ```
 
 ### Methods
@@ -128,8 +133,8 @@ interface SupervisorConfig {
 
 Execute complex multi-agent scenario.
 
-```typescript
-async execute(request: TestRequest): Promise<TestResult>
+```python
+def execute(self, request: TestRequest) -> TestResult:
 ```
 
 ---

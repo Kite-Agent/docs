@@ -10,35 +10,37 @@ Complete reference for all event types in KiteAgent.
 
 All events extend the base `Event` class:
 
-```typescript
-abstract class Event {
-  timestamp: Date;
-  id: string;
-}
+```python
+from abc import ABC
+from datetime import datetime
+from dataclasses import dataclass
+
+@dataclass
+class Event(ABC):
+    timestamp: datetime
+    id: str
 ```
 
 ## TestRequestEvent
 
 User's initial test request.
 
-```typescript
-class TestRequestEvent extends Event {
-  constructor(
-    public url: string,
-    public scenario: string,
-    public requirements?: string
-  );
-}
+```python
+@dataclass
+class TestRequestEvent(Event):
+    url: str
+    scenario: str
+    requirements: Optional[str] = None
 ```
 
 **Example:**
 
-```typescript
-const event = new TestRequestEvent(
-  "https://example.com",
-  "Test login flow",
-  "Use admin credentials"
-);
+```python
+event = TestRequestEvent(
+    url="https://example.com",
+    scenario="Test login flow",
+    requirements="Use admin credentials"
+)
 ```
 
 ---
@@ -47,16 +49,20 @@ const event = new TestRequestEvent(
 
 Represents a browser interaction.
 
-```typescript
-class BrowserActionEvent extends Event {
-  constructor(
-    public action: string,
-    public selector?: string,
-    public data?: string,
-    public url?: string,
-    public result: ActionResult = ActionResult.SUCCESS
-  );
-}
+```python
+from enum import Enum
+
+class ActionResult(Enum):
+    SUCCESS = "success"
+    FAILURE = "failure"
+
+@dataclass
+class BrowserActionEvent(Event):
+    action: str
+    selector: Optional[str] = None
+    data: Optional[str] = None
+    url: Optional[str] = None
+    result: ActionResult = ActionResult.SUCCESS
 ```
 
 **Properties:**
@@ -69,14 +75,14 @@ class BrowserActionEvent extends Event {
 
 **Example:**
 
-```typescript
-const clickEvent = new BrowserActionEvent("click", "#submit-button");
+```python
+click_event = BrowserActionEvent(action="click", selector="#submit-button")
 
-const typeEvent = new BrowserActionEvent(
-  "type",
-  'input[name="username"]',
-  "testuser"
-);
+type_event = BrowserActionEvent(
+    action="type",
+    selector='input[name="username"]',
+    data="testuser"
+)
 ```
 
 ---
@@ -85,15 +91,13 @@ const typeEvent = new BrowserActionEvent(
 
 Browser state observation.
 
-```typescript
-class DOMObservationEvent extends Event {
-  constructor(
-    public dom_tree: string,
-    public screenshot_b64?: string,
-    public url: string = "",
-    public viewport: [number, number] = [1920, 1080]
-  );
-}
+```python
+@dataclass
+class DOMObservationEvent(Event):
+    dom_tree: str
+    screenshot_b64: Optional[str] = None
+    url: str = ""
+    viewport: tuple[int, int] = (1920, 1080)
 ```
 
 **Properties:**
@@ -109,16 +113,14 @@ class DOMObservationEvent extends Event {
 
 Test assertion/verification.
 
-```typescript
-class AssertionEvent extends Event {
-  constructor(
-    public assertion_type: string,
-    public expected: string,
-    public actual: string,
-    public passed: boolean,
-    public message?: string
-  );
-}
+```python
+@dataclass
+class AssertionEvent(Event):
+    assertion_type: str
+    expected: str
+    actual: str
+    passed: bool
+    message: Optional[str] = None
 ```
 
 **Assertion Types:**
@@ -130,14 +132,14 @@ class AssertionEvent extends Event {
 
 **Example:**
 
-```typescript
-const assertion = new AssertionEvent(
-  "equals",
-  "Dashboard",
-  "Dashboard",
-  true,
-  "Page title matches"
-);
+```python
+assertion = AssertionEvent(
+    assertion_type="equals",
+    expected="Dashboard",
+    actual="Dashboard",
+    passed=True,
+    message="Page title matches"
+)
 ```
 
 ---
@@ -146,16 +148,14 @@ const assertion = new AssertionEvent(
 
 Error or failure information.
 
-```typescript
-class TestFailureEvent extends Event {
-  constructor(
-    public error_type: string,
-    public error_message: string,
-    public traceback: string,
-    public healing_attempted: boolean = false,
-    public healing_successful: boolean = false
-  );
-}
+```python
+@dataclass
+class TestFailureEvent(Event):
+    error_type: str
+    error_message: str
+    traceback: str
+    healing_attempted: bool = False
+    healing_successful: bool = False
 ```
 
 **Error Types:**
@@ -171,12 +171,13 @@ class TestFailureEvent extends Event {
 
 Enum for action results:
 
-```typescript
-enum ActionResult {
-  SUCCESS = "success",
-  FAILURE = "failure",
-  TIMEOUT = "timeout",
-}
+```python
+from enum import Enum
+
+class ActionResult(Enum):
+    SUCCESS = "success"
+    FAILURE = "failure"
+    TIMEOUT = "timeout"
 ```
 
 ## Next Steps

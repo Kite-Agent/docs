@@ -10,12 +10,17 @@ Complete reference for tool interfaces and implementations.
 
 Base interface for all tools.
 
-```typescript
-interface Tool {
-  name: string;
-  execute(action: Action): Promise<Event>;
-  canHandle(action: Action): boolean;
-}
+```python
+from typing import Protocol
+
+class Tool(Protocol):
+    name: str
+    
+    def execute(self, action: Action) -> Event:
+        ...
+    
+    def can_handle(self, action: Action) -> bool:
+        ...
 ```
 
 ---
@@ -26,19 +31,19 @@ Tool for browser automation.
 
 ### Constructor
 
-```typescript
-new BrowserTool(config?: BrowserToolConfig)
+```python
+BrowserTool(config: Optional[BrowserToolConfig] = None)
 ```
 
 #### BrowserToolConfig
 
-```typescript
-interface BrowserToolConfig {
-  headless?: boolean;
-  viewport?: { width: number; height: number };
-  slowMo?: number;
-  timeout?: number;
-}
+```python
+@dataclass
+class BrowserToolConfig:
+    headless: bool = True
+    viewport: dict = field(default_factory=lambda: {"width": 1920, "height": 1080})
+    slow_mo: int = 0
+    timeout: int = 30000
 ```
 
 ### Methods
@@ -47,32 +52,32 @@ interface BrowserToolConfig {
 
 Click an element.
 
-```typescript
-async click(selector: string): Promise<BrowserActionEvent>
+```python
+def click(self, selector: str) -> BrowserActionEvent:
 ```
 
 #### type()
 
 Enter text.
 
-```typescript
-async type(selector: string, text: string): Promise<BrowserActionEvent>
+```python
+def type(self, selector: str, text: str) -> BrowserActionEvent:
 ```
 
 #### navigate()
 
 Go to URL.
 
-```typescript
-async navigate(url: string): Promise<BrowserActionEvent>
+```python
+def navigate(self, url: str) -> BrowserActionEvent:
 ```
 
-#### extractContent()
+#### extract_content()
 
 Get element text.
 
-```typescript
-async extractContent(selector: string): Promise<string>
+```python
+def extract_content(self, selector: str) -> str:
 ```
 
 ---
@@ -83,8 +88,8 @@ Tool for API testing.
 
 ### Constructor
 
-```typescript
-new APITool(config?: APIToolConfig)
+```python
+APITool(config: Optional[APIToolConfig] = None)
 ```
 
 ### Methods
@@ -93,8 +98,8 @@ new APITool(config?: APIToolConfig)
 
 Send GET request.
 
-```typescript
-async get(url: string, headers?: Record<string, string>): Promise<APIResponseEvent>
+```python
+def get(self, url: str, headers: Optional[Dict[str, str]] = None) -> APIResponseEvent:
 ```
 
 #### post()

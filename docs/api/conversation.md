@@ -12,110 +12,110 @@ The single source of truth for test session state.
 
 ### Constructor
 
-```typescript
-new Conversation(events?: Event[], metadata?: Record<string, any>)
+```python
+Conversation(events: Optional[List[Event]] = None, metadata: Optional[Dict[str, Any]] = None)
 ```
 
 **Example:**
 
-```typescript
-const conv = new Conversation();
+```python
+conv = Conversation()
 
-// With metadata
-const conv = new Conversation([], {
-  testId: "TC-001",
-  environment: "staging",
-});
+# With metadata
+conv = Conversation([], {
+    "test_id": "TC-001",
+    "environment": "staging"
+})
 ```
 
 ---
 
 ## Instance Methods
 
-### withEvent()
+### with_event()
 
 Add an event and return new conversation (immutable).
 
-```typescript
-withEvent(event: Event): Conversation
+```python
+def with_event(self, event: Event) -> Conversation:
 ```
 
 **Example:**
 
-```typescript
-let conv = new Conversation();
-conv = conv.withEvent(new BrowserActionEvent("click", "#button"));
+```python
+conv = Conversation()
+conv = conv.with_event(BrowserActionEvent("click", "#button"))
 ```
 
 ---
 
-### getEvents()
+### events
 
 Get all events.
 
-```typescript
-get events(): Event[]
+```python
+@property
+def events(self) -> List[Event]:
 ```
 
 **Example:**
 
-```typescript
-const allEvents = conversation.events;
+```python
+all_events = conversation.events
 ```
 
 ---
 
-### getEventsOfType()
+### get_events_of_type()
 
 Filter events by type.
 
-```typescript
-getEventsOfType<T extends Event>(type: new (...args: any[]) => T): T[]
+```python
+def get_events_of_type(self, event_type: Type[T]) -> List[T]:
 ```
 
 **Example:**
 
-```typescript
-const actions = conversation.getEventsOfType(BrowserActionEvent);
-const failures = conversation.getEventsOfType(TestFailureEvent);
+```python
+actions = conversation.get_events_of_type(BrowserActionEvent)
+failures = conversation.get_events_of_type(TestFailureEvent)
 ```
 
 ---
 
-### hasFailures()
+### has_failures()
 
 Check if conversation contains failures.
 
-```typescript
-hasFailures(): boolean
+```python
+def has_failures(self) -> bool:
 ```
 
 **Example:**
 
-```typescript
-if (conversation.hasFailures()) {
-  console.error("Test failed");
-}
+```python
+if conversation.has_failures():
+    print("Test failed")
 ```
 
 ---
 
-### getFailures()
+### get_failures()
 
 Get all failure events.
 
-```typescript
-getFailures(): TestFailureEvent[]
+```python
+def get_failures(self) -> List[TestFailureEvent]:
 ```
 
 ---
 
-### getCurrentState()
+### get_current_state()
 
 Derive current state from events.
 
-```typescript
-getCurrentState(): State
+```python
+def get_current_state(self) -> State:
 ```
 
 **Returns:** Current state object with DOM, URL, screenshot, etc.

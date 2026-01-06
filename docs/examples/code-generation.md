@@ -12,49 +12,52 @@ Record a manual test session and generate Playwright, Selenium, or Cypress code.
 
 ## Recording a Session
 
-```typescript
-import { BrowsingAgent, CodingAgent } from "@kite-agent/core";
+```python
+from kite_agent import BrowsingAgent, CodingAgent, BrowserTool, Conversation
+import os
 
-async function recordAndGenerate() {
-  // Step 1: Record test execution
-  const browsingAgent = new BrowsingAgent({
-    tools: [new BrowserTool()],
-  });
-
-  let conversation = new Conversation();
-
-  conversation = await browsingAgent.execute(
-    conversation,
-    "Navigate to https://example.com"
-  );
-
-  conversation = await browsingAgent.execute(conversation, "Click 'Sign Up'");
-
-  conversation = await browsingAgent.execute(
-    conversation,
-    "Fill registration form"
-  );
-
-  // Step 2: Generate code from conversation
-  const codingAgent = new CodingAgent({
-    llm: { model: "gpt-4", apiKey: process.env.OPENAI_API_KEY },
-  });
-
-  // Generate for different frameworks
-  const playwrightCode = await codingAgent.generateCode(
-    conversation,
-    "playwright"
-  );
-
-  const seleniumCode = await codingAgent.generateCode(conversation, "selenium");
-
-  const cypressCode = await codingAgent.generateCode(conversation, "cypress");
-
-  // Save generated code
-  await writeFile("./tests/signup.playwright.ts", playwrightCode);
-  await writeFile("./tests/signup.selenium.py", seleniumCode);
-  await writeFile("./tests/signup.cypress.js", cypressCode);
-}
+def record_and_generate():
+    # Step 1: Record test execution
+    browsing_agent = BrowsingAgent(
+        tools=[BrowserTool()]
+    )
+    
+    conversation = Conversation()
+    
+    conversation = browsing_agent.execute(
+        conversation,
+        "Navigate to https://example.com"
+    )
+    
+    conversation = browsing_agent.execute(conversation, "Click 'Sign Up'")
+    
+    conversation = browsing_agent.execute(
+        conversation,
+        "Fill registration form"
+    )
+    
+    # Step 2: Generate code from conversation
+    coding_agent = CodingAgent(
+        llm={"model": "gpt-4", "api_key": os.getenv("OPENAI_API_KEY")}
+    )
+    
+    # Generate for different frameworks
+    playwright_code = coding_agent.generate_code(
+        conversation,
+        "playwright"
+    )
+    
+    selenium_code = coding_agent.generate_code(conversation, "selenium")
+    
+    cypress_code = coding_agent.generate_code(conversation, "cypress")
+    
+    # Save generated code
+    with open("./tests/signup.playwright.ts", "w") as f:
+        f.write(playwright_code)
+    with open("./tests/signup.selenium.py", "w") as f:
+        f.write(selenium_code)
+    with open("./tests/signup.cypress.js", "w") as f:
+        f.write(cypress_code)
 ```
 
 ## Generated Code Examples

@@ -24,37 +24,36 @@ await page.click("#submit-btn"); // Selector changed to '.submit-button'
 
 KiteAgent automatically recovers:
 
-```typescript
-import { BrowsingAgent, BrowserTool, SelfHealingSkill } from "@kite-agent/core";
+```python
+from kite_agent import BrowsingAgent, BrowserTool, SelfHealingSkill, Conversation
 
-async function testWithSelfHealing() {
-  const agent = new BrowsingAgent({
-    tools: [new BrowserTool()],
-    skills: [
-      new SelfHealingSkill({
-        visionModel: "gpt-4-vision",
-        maxRetries: 3,
-      }),
-    ],
-  });
-
-  let conversation = new Conversation();
-
-  // This will succeed even if selector changes
-  conversation = await agent.execute(conversation, "Click the submit button");
-
-  // Behind the scenes:
-  // 1. Tries original selector: #submit-btn ❌
-  // 2. Self-healing activates
-  // 3. Takes screenshot
-  // 4. Uses vision model to find button
-  // 5. Finds new selector: .submit-button ✓
-  // 6. Retries with new selector ✓
-
-  console.log("✓ Test passed with self-healing!");
-
-  return conversation;
-}
+def test_with_self_healing():
+    agent = BrowsingAgent(
+        tools=[BrowserTool()],
+        skills=[
+            SelfHealingSkill(
+                vision_model="gpt-4-vision",
+                max_retries=3
+            )
+        ]
+    )
+    
+    conversation = Conversation()
+    
+    # This will succeed even if selector changes
+    conversation = agent.execute(conversation, "Click the submit button")
+    
+    # Behind the scenes:
+    # 1. Tries original selector: #submit-btn ❌
+    # 2. Self-healing activates
+    # 3. Takes screenshot
+    # 4. Uses vision model to find button
+    # 5. Finds new selector: .submit-button ✓
+    # 6. Retries with new selector ✓
+    
+    print("✓ Test passed with self-healing!")
+    
+    return conversation
 ```
 
 ## How It Works
@@ -79,20 +78,20 @@ sequenceDiagram
 
 ## Configuration Options
 
-```typescript
-const skill = new SelfHealingSkill({
-  // Vision model to use
-  visionModel: "gpt-4-vision",
-
-  // Maximum retry attempts
-  maxRetries: 3,
-
-  // Similarity threshold (0-1)
-  similarityThreshold: 0.85,
-
-  // Enable caching of healed selectors
-  cacheHealedSelectors: true,
-});
+```python
+skill = SelfHealingSkill(
+    # Vision model to use
+    vision_model="gpt-4-vision",
+    
+    # Maximum retry attempts
+    max_retries=3,
+    
+    # Similarity threshold (0-1)
+    similarity_threshold=0.85,
+    
+    # Enable caching of healed selectors
+    cache_healed_selectors=True
+)
 ```
 
 ## Next Steps

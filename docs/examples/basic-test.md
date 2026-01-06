@@ -17,122 +17,121 @@ Test a login flow:
 
 ## Complete Code
 
-```typescript
-import {
-  KiteAgent,
-  BrowsingAgent,
-  BrowserTool,
-  Conversation,
-} from "@kite-agent/core";
+```python
+from kite_agent import (
+    KiteAgent,
+    BrowsingAgent,
+    BrowserTool,
+    Conversation
+)
+import os
 
-async function testLogin() {
-  // Initialize agent
-  const agent = new BrowsingAgent({
-    llm: {
-      model: "gpt-4",
-      apiKey: process.env.OPENAI_API_KEY,
-      temperature: 0.0,
-    },
-    tools: [
-      new BrowserTool({
-        headless: true,
-        viewport: { width: 1920, height: 1080 },
-      }),
-    ],
-  });
+def test_login():
+    # Initialize agent
+    agent = BrowsingAgent(
+        llm={
+            "model": "gpt-4",
+            "api_key": os.getenv("OPENAI_API_KEY"),
+            "temperature": 0.0
+        },
+        tools=[
+            BrowserTool(
+                headless=True,
+                viewport={"width": 1920, "height": 1080}
+            )
+        ]
+    )
+    
+    # Create conversation
+    conversation = Conversation()
+    
+    try:
+        # Step 1: Navigate
+        conversation = agent.execute(
+            conversation,
+            "Navigate to https://example.com/login"
+        )
+        
+        # Step 2: Enter username
+        conversation = agent.execute(
+            conversation,
+            "Enter 'testuser@example.com' in the username field"
+        )
+        
+        # Step 3: Enter password
+        conversation = agent.execute(
+            conversation,
+            "Enter 'SecurePass123!' in the password field"
+        )
+        
+        # Step 4: Submit
+        conversation = agent.execute(
+            conversation,
+            "Click the 'Login' button"
+        )
+        
+        # Step 5: Verify
+        conversation = agent.execute(
+            conversation,
+            "Verify that the page URL is 'https://example.com/dashboard'"
+        )
+        
+        conversation = agent.execute(
+            conversation,
+            "Verify that the text 'Welcome, testuser' is visible"
+        )
+        
+        print("✓ Test passed!")
+        
+        # Save conversation for later analysis
+        conversation.save("./conversations/login-test.json")
+    except Exception as error:
+        print(f"✗ Test failed: {error}")
+        
+        # Save failed conversation for debugging
+        conversation.save("./conversations/login-test-failed.json")
+        raise error
+    
+    return conversation
 
-  // Create conversation
-  let conversation = new Conversation();
-
-  try {
-    // Step 1: Navigate
-    conversation = await agent.execute(
-      conversation,
-      "Navigate to https://example.com/login"
-    );
-
-    // Step 2: Enter username
-    conversation = await agent.execute(
-      conversation,
-      "Enter 'testuser@example.com' in the username field"
-    );
-
-    // Step 3: Enter password
-    conversation = await agent.execute(
-      conversation,
-      "Enter 'SecurePass123!' in the password field"
-    );
-
-    // Step 4: Submit
-    conversation = await agent.execute(
-      conversation,
-      "Click the 'Login' button"
-    );
-
-    // Step 5: Verify
-    conversation = await agent.execute(
-      conversation,
-      "Verify that the page URL is 'https://example.com/dashboard'"
-    );
-
-    conversation = await agent.execute(
-      conversation,
-      "Verify that the text 'Welcome, testuser' is visible"
-    );
-
-    console.log("✓ Test passed!");
-
-    // Save conversation for later analysis
-    await conversation.save("./conversations/login-test.json");
-  } catch (error) {
-    console.error("✗ Test failed:", error.message);
-
-    // Save failed conversation for debugging
-    await conversation.save("./conversations/login-test-failed.json");
-    throw error;
-  }
-
-  return conversation;
-}
-
-// Run test
-testLogin()
-  .then((conv) => {
-    console.log(`Test completed with ${conv.events.length} events`);
-  })
-  .catch((error) => {
-    console.error("Test execution failed:", error);
-    process.exit(1);
-  });
+# Run test
+if __name__ == "__main__":
+    try:
+        conv = test_login()
+        print(f"Test completed with {len(conv.events)} events")
+    except Exception as error:
+        print(f"Test execution failed: {error}")
+        exit(1)
 ```
 
 ## Generate Test Code
 
 After running the test, generate Playwright code:
 
-```typescript
-import { CodingAgent } from "@kite-agent/core";
+```python
+from kite_agent import CodingAgent
+import os
 
-async function generateTestCode(conversation: Conversation) {
-  const codingAgent = new CodingAgent({
-    llm: {
-      model: "gpt-4",
-      apiKey: process.env.OPENAI_API_KEY,
-    },
-  });
+def generate_test_code(conversation: Conversation):
+    coding_agent = CodingAgent(
+        llm={
+            "model": "gpt-4",
+            "api_key": os.getenv("OPENAI_API_KEY")
+        }
+    )
+    
+    # Generate Playwright code
+    code = coding_agent.generate_code(conversation, "playwright")
+    
+    # Save to file
+    with open("./tests/login.spec.ts", "w") as f:
+        f.write(code)
+    
+    print("Generated test code saved to ./tests/login.spec.ts")
 
-  // Generate Playwright code
-  const code = await codingAgent.generateCode(conversation, "playwright");
-
-  // Save to file
-  await writeFile("./tests/login.spec.ts", code);
-
-  console.log("Generated test code saved to ./tests/login.spec.ts");
-}
-
-// Usage
-const conversation = await testLogin();
-await generateTestCode(conversation);
+# Usage
+conversation = test_login()
+generate_test_code(conversation)
 ```
 
 ## Generated Output

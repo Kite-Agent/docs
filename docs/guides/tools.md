@@ -8,87 +8,83 @@ Extend KiteAgent with custom tools for your specific needs.
 
 ## Tool Interface
 
-All tools implement the `Tool` interface:
+All tools implement the `Tool` protocol:
 
-```typescript
-interface Tool {
-  name: string;
-  execute(action: Action): Promise<Event>;
-  canHandle(action: Action): boolean;
-}
+```python
+from typing import Protocol
+from kite_agent import Action, Event
+
+class Tool(Protocol):
+    name: str
+    
+    def execute(self, action: Action) -> Event:
+        ...
+    
+    def can_handle(self, action: Action) -> bool:
+        ...
 ```
 
 ## Basic Custom Tool
 
-```typescript
-import { Tool, Action, Event } from "@kite-agent/core";
+```python
+from kite_agent import Tool, Action, Event
+from typing import Dict, Any
 
-class EmailTool implements Tool {
-  name = "email";
+class EmailTool(Tool):
+    def __init__(self, config: Dict[str, Any]):
+        self.name = "email"
+        self.config = config
+    
+    def execute(self, action: Action) -> Event:
+        if action.type == "send":
+            return self._send_email(action.data)
+        raise ValueError(f"Unknown action: {action.type}")
+    
+    def can_handle(self, action: Action) -> bool:
+        return action.tool_name == "email"
+    
+    def _send_email(self, data: Dict[str, Any]) -> "EmailSentEvent":
+        # Implementation
+        return EmailSentEvent(
+            to=data["to"],
+            subject=data["subject"],
+            success=True
+        )
 
-  constructor(private config: EmailConfig) {}
-
-  async execute(action: Action): Promise<Event> {
-    if (action.type === "send") {
-      return await this.sendEmail(action.data);
-    }
-    throw new Error(`Unknown action: ${action.type}`);
-  }
-
-  canHandle(action: Action): boolean {
-    return action.toolName === "email";
-  }
-
-  private async sendEmail(data: any): Promise<EmailSentEvent> {
-    // Implementation
-    return new EmailSentEvent({
-      to: data.to,
-      subject: data.subject,
-      success: true,
-    });
-  }
-}
-
-// Usage
-const agent = new BrowsingAgent({
-  tools: [new BrowserTool(), new EmailTool({ smtp: "smtp.example.com" })],
-});
+# Usage
+agent = BrowsingAgent(
+    tools=[BrowserTool(), EmailTool({"smtp": "smtp.example.com"})]
+)
 ```
 
 ## Advanced Tool Example
 
-```typescript
-class DatabaseTool implements Tool {
-  name = "database";
-
-  constructor(private connection: DatabaseConnection) {}
-
-  async execute(action: Action): Promise<Event> {
-    switch (action.type) {
-      case "query":
-        return await this.query(action.data.sql);
-      case "insert":
-        return await this.insert(action.data.table, action.data.values);
-      case "delete":
-        return await this.delete(action.data.table, action.data.where);
-      default:
-        throw new Error(`Unknown action: ${action.type}`);
-    }
-  }
-
-  canHandle(action: Action): boolean {
-    return action.toolName === "database";
-  }
-
-  private async query(sql: string): Promise<QueryResultEvent> {
-    const results = await this.connection.query(sql);
-    return new QueryResultEvent({
-      sql,
-      rows: results.rows,
-      rowCount: results.rowCount,
-    });
-  }
-}
+```python
+class DatabaseTool(Tool):
+    def __init__(self, connection: "DatabaseConnection"):
+        self.name = "database"
+        self.connection = connection
+    
+    def execute(self, action: Action) -> Event:
+        if action.type == "query":
+            return self._query(action.data["sql"])
+        elif action.type == "insert":
+            return self._insert(action.data["table"], action.data["values"])
+        elif action.type == "delete":
+            return self._delete(action.data["table"], action.data["where"])
+        else:
+            raise ValueError(f"Unknown action: {action.type}")
+    
+    def can_handle(self, action: Action) -> bool:
+        return action.tool_name == "database"
+    
+    def _query(self, sql: str) -> "QueryResultEvent":
+        results = self.connection.query(sql)
+        return QueryResultEvent(
+            sql=sql,
+            rows=results.rows,
+            row_count=results.row_count
+        )
 ```
 
 ## Best Practices
