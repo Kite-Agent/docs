@@ -1,30 +1,44 @@
-# Website
+# KiteAgent Documentation
 
-This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
+> **AI-Native Automation Testing Platform**
 
-## Installation
+Official documentation for KiteAgent - an intelligent automation testing platform that combines the power of LangGraph orchestration, Browser-use interaction capabilities, and OpenHands event-driven architecture.
+
+## 🚀 Features
+
+- **AI-Powered Testing**: Intelligent test execution with self-healing capabilities
+- **Event-Driven Architecture**: Reliable, reproducible test sessions
+- **Multi-Agent System**: Specialized agents for planning, execution, and code generation
+- **DOM Intelligence**: Smart DOM compression for efficient LLM processing
+- **Extensible Design**: Easy integration of new testing capabilities
+
+## 📖 Documentation
+
+This documentation site is built using [Docusaurus](https://docusaurus.io/).
+
+### Installation
 
 ```bash
-yarn
+yarn install
 ```
 
-## Local Development
+### Local Development
 
 ```bash
 yarn start
 ```
 
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
+This command starts a local development server and opens your browser to `http://localhost:3000`.
 
-## Build
+### Build
 
 ```bash
 yarn build
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+Generates static content into the `build` directory for production deployment.
 
-## Deployment
+### Deployment
 
 Using SSH:
 
@@ -38,4 +52,10 @@ Not using SSH:
 GIT_USER=<Your GitHub username> yarn deploy
 ```
 
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+## 📝 Contributing
+
+Contributions to the documentation are welcome! Please ensure all code examples follow the architectural principles outlined in the Core Concepts section.
+
+## 📄 License
+
+MIT License - See LICENSE file for details
