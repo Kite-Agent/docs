@@ -3,123 +3,101 @@ sidebar_position: 1
 slug: /
 ---
 
-# Welcome to KiteAgent
+# Get Started
 
-**KiteAgent** is an AI-native automation testing platform that revolutionizes how you approach end-to-end testing. By combining intelligent agents, event-driven architecture, and self-healing capabilities, KiteAgent makes testing smarter, faster, and more reliable.
+**AI-native automation testing built on OpenHands**
+
+KiteAgent extends [OpenHands](https://github.com/OpenHands/OpenHands) with specialized testing capabilities, integrating [Browser-use](https://github.com/browser-use/browser-use) for browser automation and [LangGraph](https://github.com/langchain-ai/langgraph) for multi-agent orchestration.
 
 ## What is KiteAgent?
 
-KiteAgent is built on three powerful foundations:
+```
+OpenHands Core (Event-driven, Stateless Agents)
+    ↓
++ Browser-use (Browser Automation)
+    ↓
++ LangGraph (Multi-Agent Orchestration)
+    ↓
+= KiteAgent (AI Testing Platform)
+```
 
-- **LangGraph Orchestration**: Intelligent multi-agent coordination for complex testing workflows
-- **Browser-use Integration**: Seamless browser interaction capabilities
-- **OpenHands Architecture**: Event-driven, stateless design for reproducible testing
+KiteAgent inherits OpenHands' design principles:
 
-## Key Features
-
-### 🤖 AI-Powered Agents
-
-KiteAgent uses specialized AI agents for different testing roles:
-
-- **Supervisor Agent**: Acts as a QA lead, analyzing requirements and coordinating tasks
-- **Browsing Agent**: Executes tests by interacting with your application
-- **Coding Agent**: Generates production-ready test code from recorded sessions
-
-### 🔄 Event-Driven Architecture
-
-Every action in KiteAgent is an immutable event:
-
-- Complete test history in a single `Conversation` object
-- Time-travel debugging - replay any point in test execution
-- Perfect bug reproduction with exact state restoration
-
-### 🔧 Self-Healing Tests
-
-No more brittle tests that break with UI changes:
-
-- Automatic element detection when selectors fail
-- Visual comparison for intelligent recovery
-- Continuous test maintenance without manual intervention
-
-### 📊 DOM Intelligence
-
-Efficient handling of large web pages:
-
-- Smart DOM compression reduces token usage
-- Keeps only interactive elements and meaningful content
-- Optimized for LLM processing
+- **Stateless agents** - All state in `Conversation`
+- **Event-driven** - Immutable event history
+- **One source of truth** - Replay from conversation
+- **Extensible** - Add capabilities via Tools & Skills
 
 ## Quick Start
 
-### Installation
-
 ```bash
-npm install @kite-agent/core
-# or
-yarn add @kite-agent/core
+pip install kite-agent
 ```
 
-### Your First Test
+```python
+from kite_agent import KiteAgent
+import os
 
-```typescript
-import { KiteAgent } from "@kite-agent/core";
+agent = KiteAgent(
+    llm={"model": "gpt-4", "api_key": os.getenv("OPENAI_API_KEY")}
+)
 
-const agent = new KiteAgent({
-  model: "gpt-4",
-  capabilities: ["browser", "self-healing"],
-});
+# Natural language test
+conversation = agent.test(
+    url="https://example.com",
+    scenario="Login with admin credentials and verify dashboard"
+)
 
-// Natural language test description
-await agent.test({
-  url: "https://example.com",
-  scenario: "User should be able to login with valid credentials",
-});
-
-// Generate Playwright code
-const code = await agent.generateCode("playwright");
-console.log(code);
+# Generate Playwright code
+code = agent.generate_code(conversation, framework="playwright")
+print(code)
 ```
 
-### What Happens Behind the Scenes
+## Key Differences from OpenHands
 
-1. **Planning**: Supervisor Agent analyzes your test scenario
-2. **Execution**: Browsing Agent interacts with your application
-3. **Observation**: DOM state and screenshots are captured as events
-4. **Adaptation**: If selectors fail, self-healing kicks in
-5. **Code Generation**: Coding Agent converts events to production code
+| Feature | OpenHands                    | KiteAgent                  |
+| ------- | ---------------------------- | -------------------------- |
+| Domain  | General software development | Testing automation         |
+| Browser | Generic sandbox              | Browser-use integration    |
+| Agents  | Code/Browser agents          | Testing-specialized agents |
+| Output  | Code changes                 | Test code + artifacts      |
+| Events  | Generic events               | Testing-specific events    |
 
-## Architecture Overview
+## Architecture
 
-```mermaid
-flowchart LR
-    User[User Request] --> Supervisor[Supervisor Agent]
-    Supervisor --> Planner[Test Planning]
-    Planner --> Browser[Browsing Agent]
-    Browser --> Tool[Browser Tool]
-    Tool --> App[Your Application]
-    App --> Events[Event Stream]
-    Events --> Coder[Coding Agent]
-    Coder --> Code[Test Code Output]
+```
+┌─────────────────────────────────────────┐
+│  LangGraph Orchestration Layer         │
+│  (Supervisor → Planner → Workers)      │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│  KiteAgent Core (OpenHands-compliant)  │
+│  • Browsing Agent                       │
+│  • Coding Agent                         │
+│  • Conversation State                   │
+│  • DOM Condenser                        │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│  Browser-use Integration                │
+│  • Browser Tool                         │
+│  • Self-Healing Skill                   │
+└─────────────────────────────────────────┘
 ```
 
-## Why Choose KiteAgent?
+## Documentation Structure
 
-| Traditional Testing        | KiteAgent                          |
-| -------------------------- | ---------------------------------- |
-| Manual test script writing | Natural language test descriptions |
-| Brittle selectors          | Self-healing automation            |
-| Difficult debugging        | Time-travel event replay           |
-| Limited to one capability  | Extensible multi-capability design |
-| Static test code           | AI-generated, optimized code       |
+- **[Core Concepts](./core-concepts/architecture)** - OpenHands principles + testing extensions
+- **[Guides](./guides/getting-started)** - Practical usage
+- **[API Reference](./api/agents)** - Complete API
+- **[Examples](./examples/basic-test)** - Real-world code
 
-## Next Steps
+## Learn More
 
-Ready to dive deeper? Explore our documentation:
-
-- **[Core Concepts](./core-concepts/architecture)**: Understand KiteAgent's architecture
-- **[Guides](./guides/agents)**: Learn how to use agents, events, and tools
-- **[API Reference](./api/agents)**: Detailed API documentation
-- **[Examples](./examples/basic-test)**: Practical code examples
+- **OpenHands**: [docs.all-hands.dev](https://docs.all-hands.dev)
+- **Browser-use**: [browser-use.com](https://browser-use.com)
+- **LangGraph**: [langchain-ai.github.io/langgraph](https://langchain-ai.github.io/langgraph)
 
 ## Community & Support
 

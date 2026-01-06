@@ -2,13 +2,117 @@
 sidebar_position: 1
 ---
 
-# Architecture Overview
+# Architecture
 
-KiteAgent's architecture is built on three pillars: **Stateless Agents**, **Event-Driven Design**, and **Extensible Capabilities**. This document explains the high-level architecture and how components interact.
+KiteAgent extends OpenHands with testing-specific capabilities.
 
-## System Layers
+## System Overview
 
-KiteAgent is organized into four distinct layers:
+```
+┌──────────────────────────────────────┐
+│   LangGraph (Orchestration)         │  ← Multi-agent coordination
+├──────────────────────────────────────┤
+│   KiteAgent (OpenHands Core)        │  ← Event-driven, stateless
+│   • Agents                           │
+│   • Conversation                     │
+│   • Events                           │
+├──────────────────────────────────────┤
+│   Browser-use (Capabilities)         │  ← Browser automation
+│   • BrowserTool                      │
+│   • Self-Healing                     │
+└──────────────────────────────────────┘
+```
+
+## Key Components
+
+### From OpenHands
+
+**Conversation** - Single source of truth
+
+```python
+conversation = Conversation()
+conversation = conversation.with_event(event)  # Immutable
+state = conversation.get_current_state()
+```
+
+**Events** - Immutable action history
+
+```python
+@dataclass(frozen=True)
+class BrowserActionEvent:
+    action: str
+    selector: str
+    timestamp: datetime
+```
+
+**Stateless Agents** - No internal state
+
+```python
+class BrowsingAgent:
+    def execute(self, conversation, instruction):
+        # Read from conversation
+        state = conversation.get_current_state()
+        # Write back to conversation
+        return conversation.with_event(new_event)
+```
+
+### KiteAgent Extensions
+
+**Testing-Specific Events**
+
+- `TestRequestEvent` - Test scenario
+- `BrowserActionEvent` - UI interaction
+- `DOMObservationEvent` - Page state
+- `AssertionEvent` - Verification
+- `TestFailureEvent` - Error info
+
+**DOM Condenser**
+
+```python
+# Raw: 50KB → Condensed: 5KB
+condensed_dom = condenser.condense(raw_html)
+# Keeps: interactive elements, text content
+# Removes: styling, scripts, empty divs
+```
+
+**Testing Agents**
+
+- `Browsing Agent` - Execute tests (uses Browser-use)
+- `Coding Agent` - Generate code
+- `Supervisor Agent` - Coordinate (uses LangGraph)
+
+## Data Flow
+
+```
+User Request
+    ↓
+Supervisor (LangGraph)
+    ↓
+Browsing Agent
+    ↓
+Browser Tool (Browser-use)
+    ↓
+Target App
+    ↓
+DOM Condenser → Conversation (Events)
+    ↓
+Coding Agent
+    ↓
+Generated Test Code
+```
+
+## Design Principles (from OpenHands)
+
+1. **Stateless** - All state in Conversation
+2. **Event-driven** - Immutable events
+3. **One source of truth** - Conversation only
+4. **Extensible** - Via Tools & Skills
+
+## Next Steps
+
+- **[Design Principles](./design-principles)** - Deep dive
+- **[Agents](./agents)** - Agent types
+- **[Events](./events)** - Event system
 
 ```mermaid
 flowchart TB
@@ -55,6 +159,7 @@ The orchestration layer uses **LangGraph** to coordinate multiple agents:
 - **Planner Agent**: Creates detailed test execution plans with clear steps
 
 **Why LangGraph?**
+
 - Native support for multi-agent workflows
 - Built-in state management
 - Conditional routing between agents
@@ -129,7 +234,7 @@ sequenceDiagram
     User->>Supervisor: "Test login flow"
     Supervisor->>Conv: Create Session
     Supervisor->>Browser: Execute test steps
-    
+
     loop Test Execution
         Browser->>Conv: Read current state
         Browser->>Tool: click("#login-btn")
@@ -139,7 +244,7 @@ sequenceDiagram
         Condenser->>Conv: CondensedEvent (5KB)
         Browser->>Conv: Write ActionEvent
     end
-    
+
     Browser->>Coder: Test complete, generate code
     Coder->>Conv: Read all events
     Coder->>Coder: Map events to Playwright
@@ -170,17 +275,19 @@ sequenceDiagram
 Agents contain no internal state. All session data lives in `Conversation`.
 
 **Benefits:**
+
 - Agents are interchangeable and scalable
 - Easy to debug - just inspect Conversation
 - Simple deployment - agents are pure functions
 
 **Example:**
+
 ```python
 # ❌ Stateful (Bad)
 class BrowsingAgent:
     def __init__(self):
         self.history = []  # Internal state
-    
+
     def execute(self, action):
         self.history.append(action)
 
@@ -197,6 +304,7 @@ class BrowsingAgent:
 The `Conversation` object is the only source of test state.
 
 **Benefits:**
+
 - Bug reproduction is perfect - just replay the Conversation
 - No state synchronization issues
 - Easy to implement features like undo/redo
@@ -207,12 +315,14 @@ The `Conversation` object is the only source of test state.
 Every action is an Event. Events are never modified after creation.
 
 **Benefits:**
+
 - Complete audit trail of test execution
 - Time-travel debugging - inspect any past state
 - Easy to implement features like test playback
 - No race conditions or inconsistent state
 
 **Event Types:**
+
 - `TestRequestEvent`: User's test requirement
 - `BrowserActionEvent`: Actions like click, type
 - `DOMObservationEvent`: Browser state snapshots
@@ -224,11 +334,13 @@ Every action is an Event. Events are never modified after creation.
 New capabilities are added through the Tool/Skill system, not by modifying core agents.
 
 **Benefits:**
+
 - Core architecture remains stable
 - Third-party integrations are simple
 - Testing capabilities can grow horizontally
 
 **Example Extension:**
+
 ```python
 # Add API testing without changing core
 class APITool(Tool):
@@ -242,14 +354,14 @@ agent = BrowsingAgent(tools=[BrowserTool(), APITool()])
 
 ## Comparison with Traditional Testing Frameworks
 
-| Aspect | Traditional (Selenium/Playwright) | KiteAgent |
-|--------|----------------------------------|-----------|
-| **Test Creation** | Manual script writing | Natural language description |
-| **State Management** | Implicit in code | Explicit Conversation object |
-| **Debugging** | Console logs, breakpoints | Time-travel event replay |
-| **Maintenance** | Manual selector updates | Self-healing automation |
-| **Extensibility** | Framework-dependent | Tool-based plugins |
-| **LLM Integration** | External, manual | Native, automatic |
+| Aspect               | Traditional (Selenium/Playwright) | KiteAgent                    |
+| -------------------- | --------------------------------- | ---------------------------- |
+| **Test Creation**    | Manual script writing             | Natural language description |
+| **State Management** | Implicit in code                  | Explicit Conversation object |
+| **Debugging**        | Console logs, breakpoints         | Time-travel event replay     |
+| **Maintenance**      | Manual selector updates           | Self-healing automation      |
+| **Extensibility**    | Framework-dependent               | Tool-based plugins           |
+| **LLM Integration**  | External, manual                  | Native, automatic            |
 
 ## Performance Characteristics
 
