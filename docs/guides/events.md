@@ -48,7 +48,7 @@ failures = [e for e in conversation.events if isinstance(e, TestFailureEvent)]
 
 ```python
 def analyze_conversation(conversation: Conversation):
-    print(f"Total events: {len(conversation.events)}")
+    print(f"Total events: \{len(conversation.events)\}")
 
     action_count = len([
         e for e in conversation.events
@@ -60,11 +60,11 @@ def analyze_conversation(conversation: Conversation):
         if isinstance(e, TestFailureEvent)
     ])
 
-    print(f"Actions: {action_count}")
-    print(f"Failures: {failure_count}")
+    print(f"Actions: \{action_count\}")
+    print(f"Failures: \{failure_count\}")
 
     success_rate = ((action_count - failure_count) / action_count) * 100
-    print(f"Success rate: {success_rate:.1f}%")
+    print(f"Success rate: \{success_rate:.1f\}%")
 ```
 
 ## Custom Events
@@ -126,6 +126,6 @@ conversation = conversation.with_event(
 
 ## Next Steps
 
-- **[Tools Guide](./tools)**: Learn about tools
-- **[Workflows](./workflows)**: Complex scenarios
-- **[Core Concepts: Events](../core-concepts/events)**: Deep dive
+- **[Tools Guide](/docs/guides/tools)**: Learn about tools
+- **[Workflows](/docs/guides/workflows)**: Complex scenarios
+- **[Core Concepts: Events](/docs/core-concepts/events)**: Deep dive

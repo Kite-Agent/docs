@@ -5,93 +5,143 @@ slug: /
 
 # Get Started
 
-**AI-native automation testing built on OpenHands**
+**AI-Native Automation Testing Platform**
 
-KiteAgent extends [OpenHands](https://github.com/OpenHands/OpenHands) with specialized testing capabilities, integrating [Browser-use](https://github.com/browser-use/browser-use) for browser automation and [LangGraph](https://github.com/langchain-ai/langgraph) for multi-agent orchestration.
+KiteAgent is an automation testing platform built on **OpenHands SDK** (core), **LangGraph** (orchestration), and **browser-use** (browser automation).
 
 ## What is KiteAgent?
 
+KiteAgent extends OpenHands with testing-specific capabilities through **composition, not forking**:
+
 ```
-OpenHands Core (Event-driven, Stateless Agents)
-    ↓
-+ Browser-use (Browser Automation)
-    ↓
-+ LangGraph (Multi-Agent Orchestration)
-    ↓
-= KiteAgent (AI Testing Platform)
+Layer 1: LangGraph          → Multi-agent orchestration + memory
+Layer 2: OpenHands SDK      → Event-driven agents + conversation
+Layer 3: browser-use        → Browser automation (20+ actions)
 ```
 
-KiteAgent inherits OpenHands' design principles:
+**Core Philosophy:**
+- **100% OpenHands Core**: No fork, only extend via Tools & Skills
+- **Direct Integration**: browser-use registered as OpenHands tool
+- **Testing Specialized**: Custom skills, workspace, events for testing
 
-- **Stateless agents** - All state in `Conversation`
-- **Event-driven** - Immutable event history
-- **One source of truth** - Replay from conversation
-- **Extensible** - Add capabilities via Tools & Skills
+## Key Features
+
+- 🤖 **Natural Language Tests** - Describe tests, agent executes
+- 🔧 **Self-Healing** - Auto-fix broken selectors
+- 📸 **Visual Regression** - Screenshot comparison
+- 🧪 **Test Generation** - Convert manual tests to code
+- 🔄 **Session Persistence** - Resume tests, debug failures
+- 📊 **Test Artifacts** - Screenshots, videos, HAR files, traces
 
 ## Quick Start
+
+### Installation
 
 ```bash
 pip install kite-agent
 ```
 
+### Your First Test
+
 ```python
-from kite_agent import KiteAgent
-import os
+from openhands.sdk import Agent, Conversation, LLM
+from openhands.sdk.workspace import LocalWorkspace
+from openhands.sdk.tool import Tool
+from kite_agent.tools import register_browser_tool
+from kite_agent.skills import self_healing_skill
 
-agent = KiteAgent(
-    llm={"model": "gpt-4", "api_key": os.getenv("OPENAI_API_KEY")}
+# Register browser-use tool
+register_browser_tool()
+
+# Create testing agent
+agent = Agent(
+    llm=LLM(model="anthropic/claude-sonnet-4", api_key="your-key"),
+    tools=[Tool(name="BrowserAutomation")],
+    skills=[self_healing_skill]
 )
 
-# Natural language test
-conversation = agent.test(
-    url="https://example.com",
-    scenario="Login with admin credentials and verify dashboard"
-)
-
-# Generate Playwright code
-code = agent.generate_code(conversation, framework="playwright")
-print(code)
+# Execute test
+with LocalWorkspace("/workspace/tests") as workspace:
+    conversation = Conversation(agent=agent, workspace=workspace)
+    
+    conversation.send_message(
+        "Test login at https://example.com with user@test.com"
+    )
+    conversation.run()
+    
+    # Check results
+    for event in conversation.state.events:
+        print(event)
 ```
 
-## Key Differences from OpenHands
+### Multi-Agent Workflow (with LangGraph)
 
-| Feature | OpenHands                    | KiteAgent                  |
-| ------- | ---------------------------- | -------------------------- |
-| Domain  | General software development | Testing automation         |
-| Browser | Generic sandbox              | Browser-use integration    |
-| Agents  | Code/Browser agents          | Testing-specialized agents |
-| Output  | Code changes                 | Test code + artifacts      |
-| Events  | Generic events               | Testing-specific events    |
+```python
+from langgraph.graph import StateGraph
+from langgraph.checkpoint.postgres import PostgresSaver
+
+# Create workflow
+workflow = StateGraph(KiteGraphState)
+workflow.add_node("browsing_agent", browsing_subgraph)
+workflow.add_node("coding_agent", coding_subgraph)
+
+# Add persistence
+checkpointer = PostgresSaver.from_conn_string("postgresql://localhost/kite")
+graph = workflow.compile(checkpointer=checkpointer)
+
+# Execute test with session persistence
+result = graph.invoke(
+    \{"messages": [\{"role": "user", "content": "Test checkout flow"\}]\},
+    config=\{"configurable": \{"thread_id": "test-123"\}\}
+)
+```
+
+## Key Differences from Generic Automation
+
+| Component | Generic (OpenHands) | Testing (KiteAgent) |
+|-----------|---------------------|---------------------|
+| **Tools** | File operations, bash | browser-use (UI testing), API clients |
+| **Skills** | Coding standards | Self-healing selectors, visual regression |
+| **Workspace** | Code repository | Test artifacts (screenshots, videos, traces) |
+| **Events** | Code changes | Test execution steps, assertions, failures |
+| **Agents** | Generic tasks | BrowsingAgent, CodingAgent (testing-specialized) |
 
 ## Architecture
 
+```mermaid
+flowchart TB
+    subgraph L1["Layer 1: Orchestration"]
+        LG[LangGraph StateGraph + Checkpointer]
+    end
+    
+    subgraph L2["Layer 2: Agent Core"]
+        OH[OpenHands Agent + Conversation]
+    end
+    
+    subgraph L3["Layer 3: Execution"]
+        BU[browser-use Agent]
+        FT[FileTool]
+    end
+    
+    LG --> OH
+    OH --> BU
+    OH --> FT
 ```
-┌─────────────────────────────────────────┐
-│  LangGraph Orchestration Layer         │
-│  (Supervisor → Planner → Workers)      │
-└──────────────┬──────────────────────────┘
-               │
-┌──────────────▼──────────────────────────┐
-│  KiteAgent Core (OpenHands-compliant)  │
-│  • Browsing Agent                       │
-│  • Coding Agent                         │
-│  • Conversation State                   │
-│  • DOM Condenser                        │
-└──────────────┬──────────────────────────┘
-               │
-┌──────────────▼──────────────────────────┐
-│  Browser-use Integration                │
-│  • Browser Tool                         │
-│  • Self-Healing Skill                   │
+
+## Next Steps
+
+- [Core Concepts](/docs/core-concepts/architecture) - Understand the three-layer architecture
+- [Getting Started Guide](/docs/guides/getting-started) - Detailed tutorial
+- [Examples](/docs/examples/basic-test) - Sample test scenarios
 └─────────────────────────────────────────┘
 ```
 
 ## Documentation Structure
 
-- **[Core Concepts](./core-concepts/architecture)** - OpenHands principles + testing extensions
-- **[Guides](./guides/getting-started)** - Practical usage
-- **[API Reference](./api/agents)** - Complete API
-- **[Examples](./examples/basic-test)** - Real-world code
+- **[Core Concepts](/docs/core-concepts/architecture)** - OpenHands principles + testing extensions
+- **[Guides](/docs/guides/getting-started)** - Practical usage
+- **[API Reference](/docs/api/agents)** - Complete API
+- **[Examples](/docs/examples/basic-test)** - Real-world code
 
 ## Learn More
 

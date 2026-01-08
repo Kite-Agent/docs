@@ -4,14 +4,7 @@ sidebar_position: 1
 
 # Getting Started
 
-This guide will help you get up and running with KiteAgent quickly.
-
-## Prerequisites
-
-Before you begin, ensure you have:
-
-- **Python** 3.9 or higher
-- **pip** package manager
+This guide helps you create your first test with KiteAgent.
 
 ## Installation
 
@@ -19,188 +12,287 @@ Before you begin, ensure you have:
 pip install kite-agent
 ```
 
+## Prerequisites
+
+- **Python** 3.9+
+- **LLM API Key** (Anthropic Claude, OpenAI, etc.)
+- **PostgreSQL** (optional, for session persistence)
+
 ## Quick Start
 
-### 1. Create Your First Test
-
-Create a file `my_first_test.py`:
+### 1. Single Agent Test
 
 ```python
-from kite_agent import KiteAgent, BrowserTool, SelfHealingSkill
-import os
+from openhands.sdk import Agent, Conversation, LLM
+from openhands.sdk.workspace import LocalWorkspace
+from openhands.sdk.tool import Tool
+from kite_agent.tools import register_browser_tool
+from kite_agent.skills import self_healing_skill
 
-def main():
-    # Initialize agent
-    agent = KiteAgent(
-        llm={
-            "model": "gpt-4",
-            "api_key": os.getenv("OPENAI_API_KEY")
-        },
-        tools=[BrowserTool()],
-        skills=[SelfHealingSkill()]
+# Register browser-use tool
+register_browser_tool()
+
+# Create testing agent
+agent = Agent(
+    llm=LLM(
+        model="anthropic/claude-sonnet-4",
+        api_key="your-api-key"
+    ),
+    tools=[Tool(name="BrowserAutomation")],
+    skills=[self_healing_skill]
+)
+
+# Execute test
+with LocalWorkspace("/workspace/tests") as workspace:
+    conversation = Conversation(agent=agent, workspace=workspace)
+    
+    conversation.send_message(
+        "Test login at https://example.com with user@test.com and password123"
     )
-
-    # Run test in natural language
-    conversation = agent.test(
-        url="https://example.com",
-        scenario="Login with valid credentials and verify dashboard loads"
-    )
-
-    # Generate Playwright code
-    code = agent.generate_code(conversation, framework="playwright")
-    print("Generated test code:")
-    print(code)
-
-if __name__ == "__main__":
-    main()
+    conversation.run()
+    
+    # Access results
+    print(f"Status: \{conversation.state.status\}")
+    
+    # Get screenshots
+    for event in conversation.state.events:
+        if hasattr(event, 'screenshots'):
+            print(f"Screenshots: \{len(event.screenshots)\}")
 ```
 
-### 2. Run Your Test
+**Run the test:**
 
 ```bash
-python my_first_test.py
+python my_test.py
 ```
 
-### 3. View Results
+### 2. Multi-Agent Workflow
 
-The agent will:
+For complex testing workflows with code generation:
 
-1. Navigate to the URL
-2. Identify login form elements
-3. Fill in credentials
-4. Click submit button
-5. Verify dashboard loads
-6. Generate Playwright code
+```python
+from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.postgres import PostgresSaver
+from typing import TypedDict, Annotated
+from langgraph.graph import add_messages
+
+# Define state
+class KiteGraphState(TypedDict):
+    messages: Annotated[list, add_messages]
+    browsing_result: dict | None
+    code_path: str | None
+
+# Create browsing subgraph
+def browsing_subgraph(state: KiteGraphState):
+    user_msg = state["messages"][-1]["content"]
+    
+    with LocalWorkspace("/workspace/tests") as workspace:
+        conversation = Conversation(
+            agent=browsing_agent,
+            workspace=workspace
+        )
+        conversation.send_message(user_msg)
+        conversation.run()
+        
+        return \{
+            "browsing_result": \{
+                "status": conversation.state.status.value,
+                "events": [e.to_dict() for e in conversation.state.events]
+            \}
+        \}
+
+# Build workflow
+workflow = StateGraph(KiteGraphState)
+workflow.add_node("browsing_agent", browsing_subgraph)
+workflow.add_node("coding_agent", coding_subgraph)
+workflow.set_entry_point("browsing_agent")
+workflow.add_edge("browsing_agent", "coding_agent")
+workflow.add_edge("coding_agent", END)
+
+# Add persistence
+checkpointer = PostgresSaver.from_conn_string(
+    "postgresql://localhost/kite"
+)
+graph = workflow.compile(checkpointer=checkpointer)
+
+# Execute with session
+result = graph.invoke(
+    \{
+        "messages": [\{
+            "role": "user",
+            "content": "Test checkout flow and generate Playwright code"
+        \}]
+    \},
+    config=\{"configurable": \{"thread_id": "test-checkout-001"\}\}
+)
+
+print(f"Test Status: \{result['browsing_result']['status']\}")
+print(f"Generated Code: \{result['code_path']\}")
+```
 
 ## Configuration
 
-### Basic Configuration
+### LLM Configuration
 
 ```python
-agent = KiteAgent(
-    llm={
-        "model": "gpt-4",
-        "temperature": 0.0,  # Conservative (recommended for tests)
-        "api_key": os.getenv("OPENAI_API_KEY")
-    },
-    browser={
-        "headless": True,
-        "viewport": {"width": 1920, "height": 1080}
-    }
+# Anthropic Claude (recommended)
+llm = LLM(
+    model="anthropic/claude-sonnet-4",
+    api_key="your-anthropic-key",
+    temperature=0.0  # Conservative for testing
+)
+
+# OpenAI
+llm = LLM(
+    model="gpt-4",
+    api_key="your-openai-key",
+    temperature=0.0
 )
 ```
 
-### Advanced Configuration
+### Workspace Configuration
 
 ```python
-agent = KiteAgent(
-    llm={
-        "model": "gpt-4",
-        "temperature": 0.0,
-        "api_key": os.getenv("OPENAI_API_KEY")
-    },
-    tools=[
-        BrowserTool(
-            headless=False,  # Show browser window
-            slow_mo=100      # Slow down actions
-        )
-    ],
+# Local development
+workspace = LocalWorkspace("/workspace/tests")
+
+# Production (Docker container)
+from openhands.sdk.workspace import RemoteWorkspace
+workspace = RemoteWorkspace(container_url="http://test-runner:8000")
+```
+
+### Testing Skills
+
+```python
+from kite_agent.skills import (
+    self_healing_skill,        # Auto-fix selectors
+    visual_regression_skill,   # Screenshot comparison
+    test_generation_skill      # Generate test code
+)
+
+agent = Agent(
+    llm=llm,
+    tools=[Tool(name="BrowserAutomation")],
     skills=[
-        SelfHealingSkill(
-            vision_model="gpt-4-vision",
-            max_retries=3
-        ),
-        VisualCheckSkill(
-            threshold=0.95  # 95% similarity required
-        )
-    ],
-    timeout=30000  # 30 second timeout
+        self_healing_skill,
+        visual_regression_skill,
+        test_generation_skill
+    ]
 )
 ```
 
-## Your First Real Test
+## Accessing Test Results
 
-Let's create a complete login test:
+### Check Test Status
 
 ```python
-from kite_agent import KiteAgent
+print(f"Status: \{conversation.state.status\}")
+# Output: ConversationStatus.FINISHED
+```
+
+### Get Test Events
+
+```python
+from openhands.sdk.event import ActionEvent, ObservationEvent
+
+# All test actions
+actions = [e for e in conversation.state.events if isinstance(e, ActionEvent)]
+print(f"Performed \{len(actions)\} actions")
+
+# Check for failures
+failures = [e for e in conversation.state.events 
+            if isinstance(e, ObservationEvent) and not e.success]
+if failures:
+    print(f"Failed at: \{failures[0].content\}")
+```
+
+### Extract Screenshots
+
+```python
+screenshots = []
+for event in conversation.state.events:
+    if hasattr(event, 'screenshots'):
+        screenshots.extend(event.screenshots)
+
+print(f"Captured \{len(screenshots)\} screenshots")
+```
+
+### Access Workspace Artifacts
+
+```python
 import os
 
-agent = KiteAgent(
-    llm={"model": "gpt-4", "api_key": os.getenv("OPENAI_API_KEY")}
+# Screenshots
+screenshot_dir = os.path.join(workspace.working_dir, "artifacts/screenshots")
+
+# Videos
+video_dir = os.path.join(workspace.working_dir, "artifacts/videos")
+
+# HAR files (network logs)
+har_dir = os.path.join(workspace.working_dir, "artifacts/har")
+
+# Generated test code
+generated_dir = os.path.join(workspace.working_dir, "generated")
+```
+
+## Common Patterns
+
+### Test Multiple Pages
+
+```python
+# Test flow across multiple pages
+conversation.send_message(
+    """
+    1. Login at https://example.com with user@test.com
+    2. Navigate to /products
+    3. Add first item to cart
+    4. Go to checkout
+    5. Verify order summary
+    """
+)
+conversation.run()
+```
+
+### Visual Regression Testing
+
+```python
+conversation.send_message(
+    "Take screenshot of homepage and compare with baseline"
+)
+conversation.run()
+
+# Baseline stored in: test-data/baselines/homepage.png
+# Comparison saved to: artifacts/screenshots/homepage_diff.png
+```
+
+### Self-Healing Selectors
+
+```python
+# Agent automatically recovers from broken selectors
+conversation.send_message(
+    "Click the submit button"  # Finds button even if selector changed
+)
+conversation.run()
+
+# Check logs for selector changes
+for event in conversation.state.events:
+    if "selector changed" in str(event.content):
+        print(f"Auto-fixed: \{event.content\}")
+```
+
+### Resume Testing Session
+
+```python
+# First run
+result1 = graph.invoke(
+    \{"messages": [\{"role": "user", "content": "Test login"\}]\},
+    config=\{"configurable": \{"thread_id": "session-123"\}\}
 )
 
-def test_login():
-    conversation = agent.test(
-        url="https://your-app.com/login",
-        scenario="""
-        1. Navigate to login page
-        2. Enter username "testuser@example.com"
-        3. Enter password "Test123!"
-        4. Click login button
-        5. Verify user is redirected to dashboard
-        6. Verify username is displayed in header
-        """
-    )
-
-    # Check for failures
-    if conversation.has_failures():
-        print("✗ Test failed!")
-        for failure in conversation.get_failures():
-            print(f"- {failure.error_message}")
-        return
-
-    print("✓ Test passed!")
-
-    # Generate code for CI/CD
-    playwright_code = agent.generate_code(conversation, framework="playwright")
-    with open("./tests/login.spec.ts", "w") as f:
-        f.write(playwright_code)
-
-if __name__ == "__main__":
-    test_login()
-```
-
-## Environment Variables
-
-Create a `.env` file:
-
-```bash
-# LLM Configuration
-OPENAI_API_KEY=sk-...
-MODEL_NAME=gpt-4
-
-# Browser Configuration
-HEADLESS=true
-VIEWPORT_WIDTH=1920
-VIEWPORT_HEIGHT=1080
-
-# Agent Configuration
-MAX_RETRIES=3
-TIMEOUT=30000
-```
-
-Load environment variables:
-
-```python
-from kite_agent import KiteAgent
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-
-agent = KiteAgent(
-    llm={
-        "model": os.getenv("MODEL_NAME"),
-        "api_key": os.getenv("OPENAI_API_KEY")
-    },
-    browser={
-        "headless": os.getenv("HEADLESS") == "true",
-        "viewport": {
-            "width": int(os.getenv("VIEWPORT_WIDTH")),
-            "height": int(os.getenv("VIEWPORT_HEIGHT"))
-        }
-    }
+# Continue later (auto-resumes from checkpoint)
+result2 = graph.invoke(
+    \{"messages": [\{"role": "user", "content": "Now test checkout"\}]\},
+    config=\{"configurable": \{"thread_id": "session-123"\}\}
 )
 ```
 
@@ -208,83 +300,36 @@ agent = KiteAgent(
 
 ### Enable Verbose Logging
 
-```typescript
-const agent = new KiteAgent({
-  logging: {
-    level: "debug",
-    output: "console",
-  },
-});
+```python
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 ```
 
-### Save Conversations
+### Replay Events
 
-```typescript
-const conversation = await agent.test({...});
-
-// Save for later analysis
-await conversation.save('./conversations/test-session.json');
-
-// Load and replay
-const loaded = await Conversation.load('./conversations/test-session.json');
-await agent.replay(loaded);
+```python
+# Time-travel debugging
+for i, event in enumerate(conversation.state.events):
+    print(f"Step \{i\}: \{event.event_type\}")
+    if isinstance(event, ObservationEvent):
+        print(f"  Result: \{event.content\}")
 ```
 
-### Capture Screenshots
+### Check Tool Execution
 
-```typescript
-const agent = new KiteAgent({
-  browser: {
-    screenshots: {
-      onAction: true, // Screenshot after each action
-      onFailure: true, // Screenshot on errors
-      path: "./screenshots",
-    },
-  },
-});
+```python
+# See what browser-use did
+for event in conversation.state.events:
+    if isinstance(event, ActionEvent) and event.tool == "browser_automation":
+        print(f"Browser task: \{event.task\}")
+    if isinstance(event, ObservationEvent) and hasattr(event, 'history'):
+        print(f"Browser actions: \{len(event.history)\}")
 ```
 
 ## Next Steps
 
-Now that you have KiteAgent running:
-
-- **[Agents Guide](./agents)**: Learn about different agent types
-- **[Events Guide](./events)**: Understanding the event system
-- **[Tools Guide](./tools)**: Extending capabilities
-- **[Workflows](./workflows)**: Complex test scenarios
-- **[Examples](../examples/basic-test)**: Real-world use cases
-
-## Common Issues
-
-### Issue: "OpenAI API key not found"
-
-**Solution**: Set your API key in environment variables:
-
-```bash
-export OPENAI_API_KEY=sk-...
-```
-
-### Issue: "Browser not launching"
-
-**Solution**: Install Playwright browsers:
-
-```bash
-npx playwright install chromium
-```
-
-### Issue: "Element not found" errors
-
-**Solution**: Enable self-healing:
-
-```typescript
-const agent = new KiteAgent({
-  skills: [new SelfHealingSkill()],
-});
-```
-
-## Getting Help
-
-- **Documentation**: Read the full documentation
-- **GitHub Issues**: Report bugs or request features
-- **Discord**: Join our community for support
-- **Examples**: Check out example projects
+- [Examples](/docs/examples/basic-test) - More test scenarios
+- [Agents Guide](/docs/guides/agents) - Deep dive into agents
+- [Tools Guide](/docs/guides/tools) - Custom tool development
+- [Workflows Guide](/docs/guides/workflows) - Complex workflows

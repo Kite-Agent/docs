@@ -38,7 +38,7 @@ def record_and_generate():
 
     # Step 2: Generate code from conversation
     coding_agent = CodingAgent(
-        llm={"model": "gpt-4", "api_key": os.getenv("OPENAI_API_KEY")}
+        llm=\{"model": "gpt-4", "api_key": os.getenv("OPENAI_API_KEY")\}
     )
 
     # Generate for different frameworks
@@ -65,9 +65,9 @@ def record_and_generate():
 ### Playwright Output
 
 ```typescript
-import { test, expect } from "@playwright/test";
+import \{ test, expect \} from "@playwright/test";
 
-test("User signup flow", async ({ page }) => {
+test("User signup flow", async (\{ page \}) => \{
   await page.goto("https://example.com");
   await page.click("text=Sign Up");
 
@@ -76,7 +76,7 @@ test("User signup flow", async ({ page }) => {
   await page.click('button:has-text("Create Account")');
 
   await expect(page.locator("text=Welcome")).toBeVisible();
-});
+\});
 ```
 
 ### Selenium Output
@@ -107,7 +107,7 @@ def test_signup():
 ## Customizing Code Generation
 
 ```typescript
-const code = await codingAgent.generateCode(conversation, "playwright", {
+const code = await codingAgent.generateCode(conversation, "playwright", \{
   // Add TypeScript types
   useTypeScript: true,
 
@@ -119,10 +119,10 @@ const code = await codingAgent.generateCode(conversation, "playwright", {
 
   // Generate Page Object Model
   usePageObjects: true,
-});
+\});
 ```
 
 ## Next Steps
 
-- **[Basic Test Example](./basic-test)**: Start with basics
-- **[Guides: Code Generation](../guides/workflows)**: Advanced patterns
+- **[Basic Test Example](/docs/examples/basic-test)**: Start with basics
+- **[Guides: Code Generation](/docs/guides/workflows)**: Advanced patterns
