@@ -20,10 +20,16 @@ const sidebars: SidebarsConfig = {
       items: [
         "core-concepts/architecture",
         "core-concepts/design-principles",
-        "core-concepts/agents",
-        "core-concepts/events",
-        "core-concepts/conversation",
-        "core-concepts/tools-and-skills",
+        {
+          type: "category",
+          label: "Components",
+          items: [
+            "core-concepts/agents",
+            "core-concepts/conversation",
+            "core-concepts/events",
+            "core-concepts/tools-and-skills",
+          ],
+        },
       ],
     },
     {
